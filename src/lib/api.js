@@ -39,8 +39,23 @@ function formatApiError(error) {
   return String(error);
 }
 
+/**
+ * Exécute un fetch en transformant toute erreur réseau brute (ex. "Load
+ * failed" sur Safari iOS, "Failed to fetch" sur Chrome — coupure de
+ * connexion, changement de wifi/4G en cours de requête) en un message
+ * clair en français, plutôt que de laisser remonter le texte natif du
+ * navigateur tel quel jusqu'à l'écran.
+ */
+async function safeFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new Error("Connexion au serveur impossible — vérifie ta connexion internet et réessaie.");
+  }
+}
+
 async function request(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await safeFetch(`${API_BASE}${path}`, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -64,8 +79,37 @@ async function request(path, { method = "GET", body } = {}) {
  * renvoyé par l'en-tête Content-Disposition du serveur quand disponible.
  */
 async function downloadFile(path, fallbackName) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await safeFetch(`${API_BASE}${path}`, {
     headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ? formatApiError(data.error) : `Erreur ${res.status}`);
+  }
+  const disposition = res.headers.get("Content-Disposition") || "";
+  const match = disposition.match(/filename="(.+)"/);
+  const filename = match ? match[1] : fallbackName;
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** Variante POST de downloadFile — pour les documents composés à partir de texte saisi (ex. rapport bailleur avec narratif). */
+async function downloadFilePost(path, body, fallbackName) {
+  const res = await safeFetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
@@ -93,7 +137,7 @@ async function downloadFile(path, fallbackName) {
  */
 async function printFile(path) {
   const separator = path.includes("?") ? "&" : "?";
-  const res = await fetch(`${API_BASE}${path}${separator}print=1`, {
+  const res = await safeFetch(`${API_BASE}${path}${separator}print=1`, {
     headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
   });
   if (!res.ok) {
@@ -301,3 +345,27 @@ export const listAuditLog = () => request("/members/audit-log");
 export const listBankAccounts = () => request("/organizations/bank-accounts");
 export const createBankAccount = (payload) => request("/organizations/bank-accounts", { method: "POST", body: payload });
 export const deleteBankAccount = (id) => request(`/organizations/bank-accounts/${id}`, { method: "DELETE" });
+
+// -------- Cadre logique (S&E) --------
+export const createLogframeIndicator = (projectId, payload) => request(`/projects/${projectId}/logframe`, { method: "POST", body: payload });
+export const updateLogframeIndicator = (id, payload) => request(`/projects/logframe/${id}`, { method: "PATCH", body: payload });
+export const deleteLogframeIndicator = (id) => request(`/projects/logframe/${id}`, { method: "DELETE" });
+
+// -------- Collecte de données terrain --------
+export const listActivityUpdates = (activityId) => request(`/projects/activities/${activityId}/updates`);
+export const createActivityUpdate = (activityId, payload) => request(`/projects/activities/${activityId}/updates`, { method: "POST", body: payload });
+
+// -------- Tableau de bord d'impact --------
+export const getImpactDashboard = (projectId) => request(`/projects/${projectId}/impact-dashboard`);
+
+// -------- Bailleurs et affectations financières --------
+export const listDonors = () => request("/organizations/donors");
+export const createDonor = (payload) => request("/organizations/donors", { method: "POST", body: payload });
+export const listDonorAllocations = (projectId) => request(`/projects/${projectId}/donor-allocations`);
+export const createDonorAllocation = (projectId, payload) => request(`/projects/${projectId}/donor-allocations`, { method: "POST", body: payload });
+export const deleteDonorAllocation = (id) => request(`/projects/donor-allocations/${id}`, { method: "DELETE" });
+export const linkBudgetLineToDonor = (budgetLineId, donorAllocationId) => request(`/projects/budget-lines/${budgetLineId}/donor-allocation`, { method: "PATCH", body: { donorAllocationId } });
+export const getDonorReport = (projectId) => request(`/projects/${projectId}/donor-report`);
+
+// -------- Rapport bailleur (UE / ONU / USAID) --------
+export const exportDonorReportPdf = (projectId, payload) => downloadFilePost(`/export/projects/${projectId}/donor-report-pdf`, payload, "rapport-bailleur.pdf");
