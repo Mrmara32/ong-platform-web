@@ -37,7 +37,7 @@ export default function ShareView() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <h1 className="text-xl text-[#101B33] font-semibold mb-2">Partage inter-ONG</h1>
       <p className="text-sm text-[#7A8399] mb-6">
         Ressources documentaires visibles par les organisations partenaires — le partage est toujours une décision explicite.

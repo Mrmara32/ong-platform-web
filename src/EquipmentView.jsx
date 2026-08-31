@@ -21,7 +21,7 @@ function NewAssetForm({ onCreate, onCancel }) {
   return (
     <div className="bg-white border border-[#E4E7EE] rounded-sm p-5 space-y-3 mb-6 max-w-lg">
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom (ex. PC portable — bureau Niamey)" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
           <option value="INFORMATIQUE">Informatique</option>
           <option value="GENERATEUR">Générateur</option>
@@ -55,7 +55,7 @@ function NewMaintenanceForm({ onSubmit, onCancel }) {
         <option value="CURATIVE">Maintenance curative</option>
       </select>
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (ex. Licence antivirus Bitdefender)" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Coût" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input type="date" value={nextDueDate} onChange={(e) => setNextDueDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
@@ -132,7 +132,7 @@ export default function EquipmentView() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl text-[#101B33] font-semibold">Équipements & Alertes</h1>
         <div className="flex items-center gap-2">

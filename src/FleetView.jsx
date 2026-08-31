@@ -47,7 +47,7 @@ function NewVehicleForm({ onCreate, onCancel, drivers }) {
         placeholder={isEngin ? "Immatriculation ou n° de série (si applicable)" : "Immatriculation"}
         className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm"
       />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Marque" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Modèle" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
@@ -115,7 +115,7 @@ function NewDriverForm({ staff, onCreate, onCancel }) {
         {staff.length === 0 && <option value="">Aucun employé disponible</option>}
         {staff.map((s) => <option key={s.id} value={s.id}>{s.fullName} — {s.jobTitle}</option>)}
       </select>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} placeholder="N° de permis" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input type="date" value={licenseExpiryDate} onChange={(e) => setLicenseExpiryDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
@@ -391,7 +391,7 @@ function VehicleDetail({ vehicleId, drivers, onBack, onChanged }) {
           />
         )}
 
-        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#F0F1F5]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#F0F1F5]">
           <div>
             <div className="flex items-center gap-1.5 text-xs text-[#7A8399] uppercase tracking-wide mb-1.5">
               <User size={12} /> Chauffeur attitré
@@ -514,12 +514,12 @@ function NewFuelInline({ onSubmit, onCancel }) {
       <p className="text-xs text-[#9AA3B5]">
         Renseigne le kilométrage parcouru depuis le dernier plein — la consommation (L/100km) et une éventuelle anomalie seront calculées automatiquement.
       </p>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <input value={liters} onChange={(e) => setLiters(e.target.value)} placeholder="Litres" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Coût" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={distance} onChange={(e) => setDistance(e.target.value)} placeholder="Km parcourus" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={projectId} onChange={(e) => setProjectId(e.target.value)} placeholder="ID projet" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={budgetLineId} onChange={(e) => setBudgetLineId(e.target.value)} placeholder="ID ligne budgétaire" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
@@ -553,7 +553,7 @@ function NewMaintenanceInline({ onSubmit, onCancel }) {
       <p className="text-xs text-[#9AA3B5]">
         Renseigne l'id du projet et de la ligne budgétaire à imputer (visibles dans l'onglet Budget) pour que la dépense soit comptabilisée automatiquement.
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <select value={type} onChange={(e) => setType(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
           <option value="PREVENTIVE">Préventive</option>
           <option value="CURATIVE">Curative</option>
@@ -562,11 +562,11 @@ function NewMaintenanceInline({ onSubmit, onCancel }) {
       </div>
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       <input value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="Prestataire" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={projectId} onChange={(e) => setProjectId(e.target.value)} placeholder="ID projet" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={budgetLineId} onChange={(e) => setBudgetLineId(e.target.value)} placeholder="ID ligne budgétaire" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={nextDueKm} onChange={(e) => setNextDueKm(e.target.value)} placeholder="Prochaine échéance (km ou heures moteur)" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input type="date" value={nextDueDate} onChange={(e) => setNextDueDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
@@ -620,7 +620,7 @@ export default function FleetView() {
 
   if (forbidden) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <h1 className="text-xl text-[#101B33] font-semibold mb-2">Flotte</h1>
         <Banner tone="error">
           Accès réservé au chargé de logistique et à l'Admin/Président de l'organisation. Ce module n'est pas accessible avec ton rôle actuel.
@@ -655,14 +655,14 @@ export default function FleetView() {
 
   if (selectedId) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <VehicleDetail vehicleId={selectedId} drivers={drivers} onBack={() => setSelectedId(null)} onChanged={refresh} />
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-xl text-[#101B33] font-semibold">Flotte — véhicules, motos, engins</h1>
         <div className="flex items-center gap-2">
@@ -688,7 +688,7 @@ export default function FleetView() {
       {showForm && <NewVehicleForm onCreate={handleCreate} onCancel={() => setShowForm(false)} drivers={drivers} />}
 
       {dashboard && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <KpiCard label="Parc total" value={dashboard.totalVehicles} accent="#1B2A4A" />
           <KpiCard label="Disponibles" value={dashboard.byStatus.DISPONIBLE ?? 0} accent="#2F855A" />
           <KpiCard label="Hors service" value={dashboard.byStatus.HORS_SERVICE ?? 0} accent="#C53030" />

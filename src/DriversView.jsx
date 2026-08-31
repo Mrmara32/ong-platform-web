@@ -23,7 +23,7 @@ function NewDriverForm({ staff, onCreate, onCancel }) {
           <select value={staffId} onChange={(e) => setStaffId(e.target.value)} className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
             {staff.map((s) => <option key={s.id} value={s.id}>{s.fullName} — {s.jobTitle}</option>)}
           </select>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} placeholder="N° de permis" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
             <input type="date" value={licenseExpiryDate} onChange={(e) => setLicenseExpiryDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
           </div>
@@ -109,7 +109,7 @@ function DriverDetail({ driverId, onBack, onChanged }) {
           <span className={`text-xs px-2 py-1 rounded-sm ${status.style}`}>{status.label}</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
             <label className="text-xs text-[#7A8399] uppercase tracking-wide font-medium">N° de permis</label>
             <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} className="w-full mt-1 border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
@@ -200,7 +200,7 @@ export default function DriversView() {
 
   if (forbidden) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <h1 className="text-xl text-[#101B33] font-semibold mb-2">Chauffeurs</h1>
         <Banner tone="error">
           Accès réservé au chargé de logistique et à l'Admin/Président de l'organisation.
@@ -224,14 +224,14 @@ export default function DriversView() {
 
   if (selectedId) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <DriverDetail driverId={selectedId} onBack={() => setSelectedId(null)} onChanged={refresh} />
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-xl text-[#101B33] font-semibold">Chauffeurs</h1>
         {!showForm && (
@@ -246,7 +246,7 @@ export default function DriversView() {
       {error && <Banner tone="error">{error}</Banner>}
       {showForm && <NewDriverForm staff={availableStaff} onCreate={handleCreate} onCancel={() => setShowForm(false)} />}
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <KpiCard label="Chauffeurs déclarés" value={drivers.length} accent="#1B2A4A" />
         <KpiCard label="Permis à surveiller" value={expiringSoon.length} accent="#E8B564" />
         <KpiCard label="Employés disponibles" value={availableStaff.length} sub="pas encore chauffeurs" accent="#2F855A" />

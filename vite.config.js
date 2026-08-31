@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
-        name: "Sahel Ops — Plateforme de gestion de projets",
-        short_name: "Sahel Ops",
+        name: "ONG Club des Amis du Monde (CAM) — Plateforme de gestion de projets",
+        short_name: "CAM",
         description: "Gestion de projets, finances, logistique et RH pour ONG et acteurs du développement.",
         lang: "fr",
         start_url: "/",

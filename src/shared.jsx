@@ -1,7 +1,27 @@
 import React, { useState } from "react";
 import { Download, FileText, FileSpreadsheet } from "lucide-react";
 
-export const fmt = (n) => new Intl.NumberFormat("fr-FR").format(Math.round(Number(n))) + " FCFA";
+// Formatage monétaire multi-devises : GNF (Franc guinéen) par défaut, USD et EUR
+// pris en charge pour les projets financés dans ces devises. Le code appelant
+// passe la devise du projet concerné ; sans précision, GNF est utilisé.
+export const fmt = (n, currency = "GNF") => {
+  try {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: currency === "GNF" ? 0 : 2,
+    }).format(Number(n));
+  } catch {
+    // Repli si un code devise non standard est fourni
+    return `${new Intl.NumberFormat("fr-FR").format(Math.round(Number(n)))} ${currency}`;
+  }
+};
+
+export const CURRENCIES = [
+  { value: "GNF", label: "Franc guinéen (GNF)" },
+  { value: "USD", label: "Dollar américain (USD)" },
+  { value: "EUR", label: "Euro (EUR)" },
+];
 export const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
 export const PAYMENT_METHODS = [
@@ -65,7 +85,7 @@ export function RecordPaymentPanel({ label, onRecord, onClose }) {
   return (
     <div className="mt-3 bg-[#FAFBFC] border border-[#E4E7EE] rounded-sm p-4 space-y-3">
       <div className="text-xs text-[#7A8399] uppercase tracking-wide">{label}</div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <select value={method} onChange={(e) => setMethod(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
           {PAYMENT_METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Plus, Receipt, Send } from "lucide-react";
-import { listInvoices, createInvoice, sendInvoice, recordInvoicePayment, exportInvoicePdf } from "./lib/api";
+import { Plus, Receipt, Send, Printer } from "lucide-react";
+import { listInvoices, createInvoice, sendInvoice, recordInvoicePayment, exportInvoicePdf, printInvoicePdf } from "./lib/api";
 import { fmt, mono, Banner, ExportMenu, RecordPaymentPanel } from "./shared.jsx";
 
 const STATUS_STYLE = {
@@ -22,7 +22,7 @@ function NewInvoiceForm({ onCreate, onCancel }) {
       <div className="text-sm font-medium text-[#101B33]">Nouvelle facture</div>
       <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Client / partenaire facturé" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description de la prestation" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Montant" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
@@ -84,7 +84,7 @@ export default function InvoicingView() {
   const total = (inv) => inv.lines.reduce((s, l) => s + Number(l.quantity) * Number(l.unitPrice), 0);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl text-[#101B33] font-semibold">Facturation</h1>
         {!showForm && (
@@ -121,6 +121,9 @@ export default function InvoicingView() {
                     Encaisser
                   </button>
                 )}
+                <button onClick={() => printInvoicePdf(inv.id)} className="flex items-center gap-1 text-xs px-3 py-1.5 border border-[#D8DCE6] rounded-sm text-[#3D4761] hover:bg-[#FAFBFC]" title="Ouvrir pour impression">
+                  <Printer size={12} />
+                </button>
                 <ExportMenu formats={[{ type: "pdf", label: "PDF" }]} onExport={() => exportInvoicePdf(inv.id, inv.number)} />
               </div>
             </div>

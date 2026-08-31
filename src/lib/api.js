@@ -60,6 +60,26 @@ async function downloadFile(path, fallbackName) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Ouvre un PDF dans un nouvel onglet pour impression directe (Ctrl+P dans le
+ * visualiseur natif du navigateur), sans téléchargement préalable. Répond à
+ * l'exigence "pouvoir imprimer tout document produit dans l'application".
+ */
+async function printFile(path) {
+  const separator = path.includes("?") ? "&" : "?";
+  const res = await fetch(`${API_BASE}${path}${separator}print=1`, {
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ? JSON.stringify(data.error) : `Erreur ${res.status}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 // -------- Auth --------
 export const login = (email, password, organizationId) =>
   request("/auth/login", { method: "POST", body: { email, password, organizationId } });
@@ -104,8 +124,49 @@ export const listSuppliers = () => request("/logistics/suppliers");
 export const createSupplier = (payload) => request("/logistics/suppliers", { method: "POST", body: payload });
 export const listPurchaseOrders = () => request("/logistics/purchase-orders");
 export const createPurchaseOrder = (payload) => request("/logistics/purchase-orders", { method: "POST", body: payload });
-export const deliverPurchaseOrder = (id) => request(`/logistics/purchase-orders/${id}/deliver`, { method: "POST" });
+export const validatePurchaseOrder = (id) => request(`/logistics/purchase-orders/${id}/validate`, { method: "POST" });
+export const rejectPurchaseOrder = (id, reason) => request(`/logistics/purchase-orders/${id}/reject`, { method: "POST", body: { reason } });
+export const deliverPurchaseOrder = (id, deliveryNoteRef) => request(`/logistics/purchase-orders/${id}/deliver`, { method: "POST", body: { deliveryNoteRef } });
+export const registerSupplierInvoice = (id, payload) => request(`/logistics/purchase-orders/${id}/supplier-invoice`, { method: "POST", body: payload });
 export const listStockItems = () => request("/logistics/stock-items");
+
+// -------- Rapport de stock --------
+export const getStockReport = (stockItemId) => request(`/logistics/stock-report${stockItemId ? `?stockItemId=${stockItemId}` : ""}`);
+
+// -------- Demandes de consommables --------
+export const listConsumableRequests = () => request("/logistics/consumable-requests");
+export const createConsumableRequest = (payload) => request("/logistics/consumable-requests", { method: "POST", body: payload });
+export const decideConsumableRequest = (id, payload) => request(`/logistics/consumable-requests/${id}`, { method: "PATCH", body: payload });
+
+// -------- Congés (RH) --------
+export const listLeaveRequests = () => request("/hr/leave-requests");
+export const createLeaveRequest = (payload) => request("/hr/leave-requests", { method: "POST", body: payload });
+export const decideLeaveRequest = (id, status) => request(`/hr/leave-requests/${id}`, { method: "PATCH", body: { status } });
+
+// -------- Écriture comptable manuelle --------
+export const postManualEntry = (payload) => request("/finance/journal/manual", { method: "POST", body: payload });
+
+// -------- Rapprochement bancaire --------
+export const listBankStatementLines = () => request("/finance/bank-statement-lines");
+export const createBankStatementLine = (payload) => request("/finance/bank-statement-lines", { method: "POST", body: payload });
+export const listUnreconciledEntries = () => request("/finance/journal/unreconciled");
+export const matchBankStatementLine = (lineId, journalEntryId) => request(`/finance/bank-statement-lines/${lineId}/match`, { method: "POST", body: { journalEntryId } });
+
+// -------- États financiers --------
+export const getBalance = (asOfDate) => request(`/financial-statements/balance${asOfDate ? `?asOfDate=${asOfDate}` : ""}`);
+export const getBilan = (asOfDate) => request(`/financial-statements/bilan${asOfDate ? `?asOfDate=${asOfDate}` : ""}`);
+export const getCompteResultat = (startDate, endDate) => {
+  const params = new URLSearchParams();
+  if (startDate) params.set("startDate", startDate);
+  if (endDate) params.set("endDate", endDate);
+  return request(`/financial-statements/compte-resultat${params.toString() ? `?${params}` : ""}`);
+};
+export const getFluxTresorerie = (startDate, endDate) => {
+  const params = new URLSearchParams();
+  if (startDate) params.set("startDate", startDate);
+  if (endDate) params.set("endDate", endDate);
+  return request(`/financial-statements/flux-tresorerie${params.toString() ? `?${params}` : ""}`);
+};
 export const createStockItem = (payload) => request("/logistics/stock-items", { method: "POST", body: payload });
 export const createStockMovement = (payload) => request("/logistics/stock-movements", { method: "POST", body: payload });
 export const listWarehouses = () => request("/logistics/warehouses");
@@ -176,9 +237,14 @@ export const notifyLogisticsOfficers = () => request("/logistics/alerts/notify",
 
 // -------- Export (PDF / Word / Excel) --------
 export const exportDocumentPdf = (id, title) => downloadFile(`/export/documents/${id}/pdf`, `${title || "document"}.pdf`);
+export const printDocumentPdf = (id) => printFile(`/export/documents/${id}/pdf`);
 export const exportDocumentDocx = (id, title) => downloadFile(`/export/documents/${id}/docx`, `${title || "document"}.docx`);
 export const exportBudgetXlsx = (projectId, code) => downloadFile(`/export/projects/${projectId}/budget/xlsx`, `budget-${code || projectId}.xlsx`);
 export const exportJournalXlsx = (projectId) => downloadFile(`/export/journal/xlsx${projectId ? `?projectId=${projectId}` : ""}`, "journal-comptable.xlsx");
 export const exportInvoicePdf = (id, number) => downloadFile(`/export/invoices/${id}/pdf`, `${number || "facture"}.pdf`);
+export const printInvoicePdf = (id) => printFile(`/export/invoices/${id}/pdf`);
+export const exportPurchaseOrderPdf = (id) => downloadFile(`/export/purchase-orders/${id}/pdf`, `bon-de-commande.pdf`);
+export const printPurchaseOrderPdf = (id) => printFile(`/export/purchase-orders/${id}/pdf`);
 export const exportPayslipPdf = (id, name) => downloadFile(`/export/payslips/${id}/pdf`, `bulletin-${name || id}.pdf`);
+export const printPayslipPdf = (id) => printFile(`/export/payslips/${id}/pdf`);
 export const exportVehiclesXlsx = () => downloadFile("/export/vehicles/xlsx", "parc-vehicules.xlsx");

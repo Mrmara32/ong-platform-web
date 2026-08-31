@@ -44,11 +44,11 @@ function NewItemForm({ warehouses, onCreate, onCancel, onAddWarehouse }) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom de l'article" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Unité (kg, sac, unité...)" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <input value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Quantité initiale" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={minQuantity} onChange={(e) => setMinQuantity(e.target.value)} placeholder="Seuil d'alerte" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={unitCost} onChange={(e) => setUnitCost(e.target.value)} placeholder="Coût unitaire" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
@@ -76,7 +76,7 @@ function MovementInline({ item, onSubmit, onClose }) {
   const [reason, setReason] = useState("");
   return (
     <div className="mt-3 bg-[#FAFBFC] border border-[#E4E7EE] rounded-sm p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <select value={type} onChange={(e) => setType(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
           <option value="ENTREE">Entrée</option>
           <option value="SORTIE">Sortie</option>
@@ -145,7 +145,7 @@ export default function StockView() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-xl text-[#101B33] font-semibold">Stocks</h1>
         {!showForm && (
@@ -159,7 +159,7 @@ export default function StockView() {
       {error && <Banner tone="error">{error}</Banner>}
       {showForm && <NewItemForm warehouses={warehouses} onCreate={handleCreateItem} onCancel={() => setShowForm(false)} onAddWarehouse={handleCreateWarehouse} />}
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <KpiCard label="Articles suivis" value={items.length} accent="#1B2A4A" />
         <KpiCard label="Sous le seuil d'alerte" value={belowThreshold.length} accent="#C53030" />
         <KpiCard label="Entrepôts" value={warehouses.length} accent="#2F855A" />

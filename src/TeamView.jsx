@@ -103,7 +103,7 @@ export default function TeamView({ currentUserId }) {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl text-[#101B33] font-semibold">Équipe</h1>
         {!showForm && (
