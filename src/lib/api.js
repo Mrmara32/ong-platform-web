@@ -248,3 +248,19 @@ export const printPurchaseOrderPdf = (id) => printFile(`/export/purchase-orders/
 export const exportPayslipPdf = (id, name) => downloadFile(`/export/payslips/${id}/pdf`, `bulletin-${name || id}.pdf`);
 export const printPayslipPdf = (id) => printFile(`/export/payslips/${id}/pdf`);
 export const exportVehiclesXlsx = () => downloadFile("/export/vehicles/xlsx", "parc-vehicules.xlsx");
+
+// -------- Demandes de paiement --------
+export const listPaymentRequests = (projectId) => request(`/payment-requests${projectId ? `?projectId=${projectId}` : ""}`);
+export const createPaymentRequest = (payload) => request("/payment-requests", { method: "POST", body: payload });
+export const decidePaymentRequest = (id, status) => request(`/payment-requests/${id}`, { method: "PATCH", body: { status } });
+export const exportPaymentRequestPdf = (id, repere) => downloadFile(`/export/payment-requests/${id}/pdf`, `demande-paiement-repere-${repere}.pdf`);
+export const printPaymentRequestPdf = (id) => printFile(`/export/payment-requests/${id}/pdf`);
+
+// -------- Lettres de transmission --------
+export const listLetterTemplates = () => request("/letters/templates");
+export const createLetterTemplate = (payload) => request("/letters/templates", { method: "POST", body: payload });
+export const deleteLetterTemplate = (id) => request(`/letters/templates/${id}`, { method: "DELETE" });
+export const listLetters = () => request("/letters");
+export const createLetter = (payload) => request("/letters", { method: "POST", body: payload });
+export const exportLetterPdf = (id, reference) => downloadFile(`/export/letters/${id}/pdf`, `${reference || "lettre"}.pdf`);
+export const printLetterPdf = (id) => printFile(`/export/letters/${id}/pdf`);

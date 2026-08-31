@@ -3,7 +3,7 @@ import {
   LayoutDashboard, FolderKanban, Wallet, Truck, Users, FileText, Share2,
   Plus, ChevronRight, AlertTriangle, CheckCircle2, LogOut, Package,
   Download, FileSpreadsheet, Receipt, Banknote, Monitor, Car, UserPlus, CreditCard, BookOpen, Printer,
-  LineChart, Landmark, ClipboardList,
+  LineChart, Landmark, ClipboardList, FileSignature, Mail,
 } from "lucide-react";
 import LoginScreen from "./LoginScreen.jsx";
 import { RecordPaymentPanel, CURRENCIES } from "./shared.jsx";
@@ -19,6 +19,9 @@ import StockView from "./StockView.jsx";
 import FinancialStatementsView from "./FinancialStatementsView.jsx";
 import BankReconciliationView from "./BankReconciliationView.jsx";
 import ConsumableRequestsView from "./ConsumableRequestsView.jsx";
+import PaymentRequestsView from "./PaymentRequestsView.jsx";
+import LettersView from "./LettersView.jsx";
+import GanttChart from "./GanttChart.jsx";
 import TeamView from "./TeamView.jsx";
 import AcceptInviteScreen from "./AcceptInviteScreen.jsx";
 import MenuBar from "./MenuBar.jsx";
@@ -54,6 +57,8 @@ const NAV_ITEMS = [
   { id: "projects", label: "Projets", icon: FolderKanban },
   { id: "budget", label: "Budget & Dépenses", icon: Wallet },
   { id: "invoicing", label: "Facturation", icon: Receipt },
+  { id: "payment-requests", label: "Demandes de paiement", icon: FileSignature },
+  { id: "letters", label: "Lettres de transmission", icon: Mail },
   { id: "journal", label: "Journal comptable", icon: BookOpen },
   { id: "financial-statements", label: "États financiers", icon: LineChart },
   { id: "bank-reconciliation", label: "Rapprochement bancaire", icon: Landmark },
@@ -667,10 +672,14 @@ function PlaceholderView({ title }) {
 
 // ================= Projets — activités filtrées par portée d'accès (réel) =================
 
-function NewActivityForm({ onSubmit, onCancel }) {
+function NewActivityForm({ project, onSubmit, onCancel }) {
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [budgetLineId, setBudgetLineId] = useState("");
+  const [estimatedCost, setEstimatedCost] = useState("");
+  const lines = project?.budgetLines || [];
+
   return (
     <div className="bg-white border border-[#E4E7EE] rounded-sm p-5 space-y-3 mb-4">
       <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Titre de l'activité" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
@@ -678,9 +687,21 @@ function NewActivityForm({ onSubmit, onCancel }) {
         <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
+      {lines.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <select value={budgetLineId} onChange={(e) => setBudgetLineId(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
+            <option value="">Sans ligne budgétaire</option>
+            {lines.map((l) => <option key={l.id} value={l.id}>{l.code} — {l.label}</option>)}
+          </select>
+          <input value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} placeholder="Coût estimé" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+        </div>
+      )}
       <div className="flex gap-2">
         <button
-          onClick={() => title && startDate && endDate && onSubmit({ title, startDate, endDate })}
+          onClick={() => title && startDate && endDate && onSubmit({
+            title, startDate, endDate,
+            ...(budgetLineId ? { budgetLineId, estimatedCost: parseFloat(estimatedCost) || 0 } : {}),
+          })}
           className="text-xs px-3 py-1.5 bg-[#1B2A4A] text-white rounded-sm hover:bg-[#233459]"
         >
           Créer l'activité
@@ -868,6 +889,7 @@ function ProjectsView({ project, projects, onSelectProject, onProjectCreated }) 
   const [data, setData] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
+  const [activityView, setActivityView] = useState("liste");
   const [error, setError] = useState(null);
 
   const refresh = useCallback(async () => {
@@ -937,7 +959,7 @@ function ProjectsView({ project, projects, onSelectProject, onProjectCreated }) 
         <>
           <h1 className="text-xl text-[#101B33] font-semibold mb-1">{project.name}</h1>
           <div className="text-xs text-[#9AA3B5] mb-6" style={mono}>{project.code} · {project.donor}</div>
-          {showForm && <NewActivityForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />}
+          {showForm && <NewActivityForm project={project} onSubmit={handleCreate} onCancel={() => setShowForm(false)} />}
 
           {data && (
             <>
@@ -946,21 +968,33 @@ function ProjectsView({ project, projects, onSelectProject, onProjectCreated }) 
                   ? "Accès complet — l'API renvoie toutes les activités du projet (Admin/Président ou Responsable)."
                   : "Espace personnel — l'API ne renvoie que les activités dont tu es responsable."}
               </div>
-              <div className="bg-white border border-[#E4E7EE] rounded-sm divide-y divide-[#F0F1F5]">
-                {data.activities.length === 0 ? (
-                  <div className="p-5 text-sm text-[#7A8399]">Aucune activité pour l'instant.</div>
-                ) : (
-                  data.activities.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between px-5 py-3">
-                      <div>
-                        <div className="text-sm text-[#101B33]">{a.title}</div>
-                        <div className="text-xs text-[#9AA3B5] mt-0.5">{a.owner?.fullName ?? "Non assignée"}</div>
-                      </div>
-                      <span className="text-xs text-[#9AA3B5]">{a.status}</span>
-                    </div>
-                  ))
-                )}
+              <div className="flex gap-1 mb-3">
+                <button onClick={() => setActivityView("liste")} className={`text-xs px-3 py-1.5 rounded-sm ${activityView === "liste" ? "bg-[#1B2A4A] text-white" : "bg-[#F0F1F5] text-[#7A8399]"}`}>Liste</button>
+                <button onClick={() => setActivityView("gantt")} className={`text-xs px-3 py-1.5 rounded-sm ${activityView === "gantt" ? "bg-[#1B2A4A] text-white" : "bg-[#F0F1F5] text-[#7A8399]"}`}>Gantt</button>
               </div>
+              {activityView === "gantt" ? (
+                <GanttChart activities={data.activities} />
+              ) : (
+                <div className="bg-white border border-[#E4E7EE] rounded-sm divide-y divide-[#F0F1F5]">
+                  {data.activities.length === 0 ? (
+                    <div className="p-5 text-sm text-[#7A8399]">Aucune activité pour l'instant.</div>
+                  ) : (
+                    data.activities.map((a) => (
+                      <div key={a.id} className="flex items-center justify-between px-5 py-3">
+                        <div>
+                          <div className="text-sm text-[#101B33]">{a.title}</div>
+                          <div className="text-xs text-[#9AA3B5] mt-0.5">
+                            {a.owner?.fullName ?? "Non assignée"}
+                            {a.budgetLine && ` · ${a.budgetLine.code} — ${a.budgetLine.label}`}
+                            {a.estimatedCost != null && ` · ${fmt(a.estimatedCost, project.currency)}`}
+                          </div>
+                        </div>
+                        <span className="text-xs text-[#9AA3B5]">{a.status}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </>
           )}
 
@@ -1170,6 +1204,8 @@ export default function App() {
         ? <BudgetView project={project} lines={lines} refreshLines={refreshLines} toast={toast} setToast={setToastTimed} />
         : <div className="p-8 text-sm text-[#7A8399]">Sélectionne un projet.</div>;
       case "invoicing": return <InvoicingView />;
+      case "payment-requests": return <PaymentRequestsView project={project} />;
+      case "letters": return <LettersView />;
       case "journal": return <JournalView project={project} />;
       case "financial-statements": return <FinancialStatementsView />;
       case "bank-reconciliation": return <BankReconciliationView />;
