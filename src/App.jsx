@@ -22,6 +22,7 @@ import ConsumableRequestsView from "./ConsumableRequestsView.jsx";
 import PaymentRequestsView from "./PaymentRequestsView.jsx";
 import LettersView from "./LettersView.jsx";
 import GanttChart from "./GanttChart.jsx";
+import AuditLogView from "./AuditLogView.jsx";
 import TeamView from "./TeamView.jsx";
 import AcceptInviteScreen from "./AcceptInviteScreen.jsx";
 import MenuBar from "./MenuBar.jsx";
@@ -716,6 +717,7 @@ function NewProjectForm({ onCreate, onCancel }) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [donor, setDonor] = useState("");
+  const [grantNumber, setGrantNumber] = useState("");
   const [currency, setCurrency] = useState("GNF");
   const [totalBudget, setTotalBudget] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -728,7 +730,7 @@ function NewProjectForm({ onCreate, onCancel }) {
   const addLine = () => setLines((prev) => [...prev, { code: "", label: "", allocated: "" }]);
   const removeLine = (i) => setLines((prev) => prev.filter((_, idx) => idx !== i));
 
-  const canSubmit = name && code && donor && totalBudget && startDate && endDate && lines.every((l) => l.code && l.label && l.allocated);
+  const canSubmit = name && code && donor && parseFloat(totalBudget) > 0 && startDate && endDate && lines.every((l) => l.code && l.label && parseFloat(l.allocated) > 0);
 
   return (
     <div className="bg-white border border-[#E4E7EE] rounded-sm p-5 space-y-4 mb-6 max-w-2xl">
@@ -743,8 +745,12 @@ function NewProjectForm({ onCreate, onCancel }) {
           {CURRENCIES.map((c) => <option key={c.value} value={c.value}>{c.value}</option>)}
         </select>
       </div>
+      <input value={grantNumber} onChange={(e) => setGrantNumber(e.target.value)} placeholder="N° de subvention (optionnel, ex. 0213947-G-2017-002-00)" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input value={totalBudget} onChange={(e) => setTotalBudget(e.target.value)} placeholder={`Budget total (${currency})`} style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+        <div>
+          <label className="text-xs text-[#7A8399] uppercase tracking-wide">Budget total ({currency}) — un nombre uniquement</label>
+          <input type="number" min="0" step="any" value={totalBudget} onChange={(e) => setTotalBudget(e.target.value)} placeholder="Ex. 450000000" style={mono} className="w-full mt-1 border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+        </div>
         <div />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -762,7 +768,7 @@ function NewProjectForm({ onCreate, onCancel }) {
             <div key={i} className="grid grid-cols-8 gap-2 min-w-[420px]">
               <input value={l.code} onChange={(e) => updateLine(i, "code", e.target.value)} placeholder="Code" className="col-span-1 border border-[#D8DCE6] rounded-sm px-2 py-1.5 text-sm" />
               <input value={l.label} onChange={(e) => updateLine(i, "label", e.target.value)} placeholder="Libellé" className="col-span-4 border border-[#D8DCE6] rounded-sm px-2 py-1.5 text-sm" />
-              <input value={l.allocated} onChange={(e) => updateLine(i, "allocated", e.target.value)} placeholder="Alloué" style={mono} className="col-span-2 border border-[#D8DCE6] rounded-sm px-2 py-1.5 text-sm" />
+              <input type="number" min="0" step="any" value={l.allocated} onChange={(e) => updateLine(i, "allocated", e.target.value)} placeholder="Alloué" style={mono} className="col-span-2 border border-[#D8DCE6] rounded-sm px-2 py-1.5 text-sm" />
               {lines.length > 1 && <button onClick={() => removeLine(i)} className="text-[#B7BFCE] hover:text-[#9B2C2C]">✕</button>}
             </div>
           ))}
@@ -773,7 +779,7 @@ function NewProjectForm({ onCreate, onCancel }) {
         <button
           disabled={!canSubmit}
           onClick={() => onCreate({
-            name, code, donor, currency, totalBudget: parseFloat(totalBudget) || 0, startDate, endDate,
+            name, code, donor, ...(grantNumber ? { grantNumber } : {}), currency, totalBudget: parseFloat(totalBudget) || 0, startDate, endDate,
             budgetLines: lines.map((l) => ({ code: l.code, label: l.label, allocated: parseFloat(l.allocated) || 0 })),
           })}
           className="text-sm px-4 py-2 bg-[#1B2A4A] text-white rounded-sm hover:bg-[#233459] disabled:opacity-40"
@@ -1220,6 +1226,7 @@ export default function App() {
       case "docs": return <DocumentsView project={project} />;
       case "share": return <ShareView />;
       case "team": return <TeamView currentUserId={tokenPayload.userId} />;
+      case "audit-log": return <AuditLogView />;
       case "settings": return <OrganizationSettingsView currentRole={tokenPayload.role} />;
       default: return null;
     }

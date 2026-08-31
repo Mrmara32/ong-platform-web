@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Users, Mail, Plus, X, Shield } from "lucide-react";
-import { listMembers, listPendingInvitations, inviteMember, revokeInvitation, updateMemberRole, removeMember } from "./lib/api";
+import { Users, Mail, Plus, X, Shield, UserPlus } from "lucide-react";
+import { listMembers, listPendingInvitations, inviteMember, revokeInvitation, updateMemberRole, removeMember, createUserAccount } from "./lib/api";
 import { Banner } from "./shared.jsx";
 
 const ROLE_LABELS = {
@@ -14,6 +14,38 @@ const ROLE_LABELS = {
   BAILLEUR_LECTURE: "Bailleur (lecture)",
 };
 const ROLE_OPTIONS = Object.entries(ROLE_LABELS);
+
+function CreateAccountForm({ onCreate, onCancel }) {
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("MEMBRE");
+
+  const canSubmit = email && fullName && password.length >= 6;
+
+  return (
+    <div className="bg-white border border-[#E4E7EE] rounded-sm p-5 space-y-3 mb-6 max-w-lg">
+      <div className="text-sm font-medium text-[#101B33]">Créer directement un compte</div>
+      <p className="text-xs text-[#9AA3B5]">Tu choisis le mot de passe et le rôle immédiatement — la personne peut se connecter tout de suite, sans email à accepter.</p>
+      <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nom complet" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@collaborateur.org" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+      <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe (6 caractères minimum)" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+      <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
+        {ROLE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+      <div className="flex gap-2">
+        <button
+          disabled={!canSubmit}
+          onClick={() => onCreate({ email, fullName, password, role })}
+          className="text-xs px-3 py-1.5 bg-[#1B2A4A] text-white rounded-sm hover:bg-[#233459] disabled:opacity-40"
+        >
+          Créer le compte
+        </button>
+        <button onClick={onCancel} className="text-xs px-3 py-1.5 text-[#7A8399]">Annuler</button>
+      </div>
+    </div>
+  );
+}
 
 function InviteForm({ onInvite, onCancel }) {
   const [email, setEmail] = useState("");
@@ -46,6 +78,7 @@ export default function TeamView({ currentUserId }) {
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [toast, setToast] = useState(null);
   const [error, setError] = useState(null);
 
@@ -58,6 +91,17 @@ export default function TeamView({ currentUserId }) {
     }
   }, []);
   useEffect(() => { refresh(); }, [refresh]);
+
+  const handleCreateAccount = async (payload) => {
+    try {
+      await createUserAccount(payload);
+      setShowCreateForm(false);
+      await refresh();
+      setToast(`Compte créé pour ${payload.fullName} — la personne peut se connecter immédiatement.`);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
 
   const handleInvite = async ({ email, role }) => {
     try {
@@ -104,16 +148,24 @@ export default function TeamView({ currentUserId }) {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <h1 className="text-xl text-[#101B33] font-semibold">Équipe</h1>
-        {!showForm && (
-          <button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 bg-[#1B2A4A] text-white text-sm px-3.5 py-2 rounded-sm hover:bg-[#233459]">
-            <Plus size={15} /> Inviter un collaborateur
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {!showCreateForm && (
+            <button onClick={() => setShowCreateForm(true)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-[#D8DCE6] rounded-sm text-[#3D4761] hover:bg-[#FAFBFC]">
+              <UserPlus size={13} /> Créer un compte directement
+            </button>
+          )}
+          {!showForm && (
+            <button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 bg-[#1B2A4A] text-white text-sm px-3.5 py-2 rounded-sm hover:bg-[#233459]">
+              <Plus size={15} /> Inviter par email
+            </button>
+          )}
+        </div>
       </div>
       {toast && <Banner>{toast}</Banner>}
       {error && <Banner tone="error">{error}</Banner>}
+      {showCreateForm && <CreateAccountForm onCreate={handleCreateAccount} onCancel={() => setShowCreateForm(false)} />}
       {showForm && <InviteForm onInvite={handleInvite} onCancel={() => setShowForm(false)} />}
 
       <div className="bg-white border border-[#E4E7EE] rounded-sm mb-6">

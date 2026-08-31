@@ -162,7 +162,7 @@ export default function MenuBar({ onNavigate, onLogout, onOpenPalette, onToggleS
       { label: "Gestion des chauffeurs", action: () => onNavigate("drivers") },
       { label: "Équipements & licences", action: () => onNavigate("equipment") },
       { divider: true },
-      { label: "Journal d'audit", disabled: true },
+      { label: "Journal d'audit", action: () => onNavigate("audit-log") },
       { label: "Import / export en masse", disabled: true },
     ],
     "Aide": [

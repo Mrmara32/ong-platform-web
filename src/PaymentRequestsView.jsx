@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { FileSignature, Plus, Printer, Download } from "lucide-react";
-import { listPaymentRequests, createPaymentRequest, decidePaymentRequest, exportPaymentRequestPdf, printPaymentRequestPdf } from "./lib/api";
+import { listPaymentRequests, createPaymentRequest, decidePaymentRequest, exportPaymentRequestPdf, printPaymentRequestPdf, listBankAccounts } from "./lib/api";
 import { fmt, mono, Banner, KpiCard } from "./shared.jsx";
 
 const STATUS_LABEL = {
@@ -27,6 +27,16 @@ function NewPaymentRequestForm({ project, onCreate, onCancel }) {
   const [achievements, setAchievements] = useState("");
   const [preparedByName, setPreparedByName] = useState("");
   const [preparedByTitle, setPreparedByTitle] = useState("");
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [bankAccountId, setBankAccountId] = useState("");
+
+  useEffect(() => {
+    listBankAccounts().then((accounts) => {
+      setBankAccounts(accounts);
+      const defaultAccount = accounts.find((a) => a.isDefault);
+      if (defaultAccount) setBankAccountId(defaultAccount.id);
+    });
+  }, []);
 
   const canSubmit = repereNumber && amountRequested && achievements && preparedByName && preparedByTitle;
 
@@ -37,6 +47,14 @@ function NewPaymentRequestForm({ project, onCreate, onCancel }) {
         <input value={repereNumber} onChange={(e) => setRepereNumber(e.target.value)} placeholder="N° de repère" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input value={amountRequested} onChange={(e) => setAmountRequested(e.target.value)} placeholder={`Montant demandé (${project?.currency || "GNF"})`} style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
+      {bankAccounts.length > 0 && (
+        <div>
+          <label className="text-xs text-[#7A8399] uppercase tracking-wide">Compte bancaire à utiliser</label>
+          <select value={bankAccountId} onChange={(e) => setBankAccountId(e.target.value)} className="w-full mt-1 border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
+            {bankAccounts.map((a) => <option key={a.id} value={a.id}>{a.label} — {a.bankName} ({a.currency})</option>)}
+          </select>
+        </div>
+      )}
       <textarea
         value={achievements}
         onChange={(e) => setAchievements(e.target.value)}
@@ -53,6 +71,7 @@ function NewPaymentRequestForm({ project, onCreate, onCancel }) {
           disabled={!canSubmit}
           onClick={() => onCreate({
             projectId: project.id,
+            ...(bankAccountId ? { bankAccountId } : {}),
             repereNumber: parseInt(repereNumber, 10),
             amountRequested: parseFloat(amountRequested) || 0,
             achievements, preparedByName, preparedByTitle,

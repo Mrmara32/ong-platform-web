@@ -12,6 +12,33 @@ export function getAuthToken() {
   return authToken;
 }
 
+/**
+ * Transforme une erreur brute de l'API (souvent un objet Zod flatten(), ex.
+ * {"formErrors":[],"fieldErrors":{"totalBudget":["Number must be greater than 0"]}})
+ * en un message lisible pour l'utilisateur, plutôt que d'afficher du JSON
+ * brut à l'écran. Corrige un défaut présent sur tous les formulaires de
+ * l'application, pas seulement celui où il a été repéré.
+ */
+function formatApiError(error) {
+  if (!error) return "Erreur inconnue";
+  if (typeof error === "string") return error;
+  if (typeof error === "object") {
+    if (Array.isArray(error.formErrors) || error.fieldErrors) {
+      const fieldMessages = Object.entries(error.fieldErrors || {}).flatMap(([field, msgs]) =>
+        (msgs || []).map((m) => `${field} : ${m}`)
+      );
+      const all = [...(error.formErrors || []), ...fieldMessages];
+      if (all.length > 0) return all.join(" — ");
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "Erreur inconnue";
+    }
+  }
+  return String(error);
+}
+
 async function request(path, { method = "GET", body } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
@@ -26,8 +53,7 @@ async function request(path, { method = "GET", body } = {}) {
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    const message = data?.error ? JSON.stringify(data.error) : `Erreur ${res.status}`;
-    throw new Error(message);
+    throw new Error(data?.error ? formatApiError(data.error) : `Erreur ${res.status}`);
   }
   return data;
 }
@@ -43,7 +69,7 @@ async function downloadFile(path, fallbackName) {
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
-    throw new Error(data?.error ? JSON.stringify(data.error) : `Erreur ${res.status}`);
+    throw new Error(data?.error ? formatApiError(data.error) : `Erreur ${res.status}`);
   }
   const disposition = res.headers.get("Content-Disposition") || "";
   const match = disposition.match(/filename="(.+)"/);
@@ -72,7 +98,7 @@ async function printFile(path) {
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
-    throw new Error(data?.error ? JSON.stringify(data.error) : `Erreur ${res.status}`);
+    throw new Error(data?.error ? formatApiError(data.error) : `Erreur ${res.status}`);
   }
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
@@ -264,3 +290,14 @@ export const listLetters = () => request("/letters");
 export const createLetter = (payload) => request("/letters", { method: "POST", body: payload });
 export const exportLetterPdf = (id, reference) => downloadFile(`/export/letters/${id}/pdf`, `${reference || "lettre"}.pdf`);
 export const printLetterPdf = (id) => printFile(`/export/letters/${id}/pdf`);
+
+// -------- Comptes utilisateurs (création directe par l'Admin) --------
+export const createUserAccount = (payload) => request("/members/create-account", { method: "POST", body: payload });
+
+// -------- Journal d'audit --------
+export const listAuditLog = () => request("/members/audit-log");
+
+// -------- Comptes bancaires (multi-comptes, multi-banques) --------
+export const listBankAccounts = () => request("/organizations/bank-accounts");
+export const createBankAccount = (payload) => request("/organizations/bank-accounts", { method: "POST", body: payload });
+export const deleteBankAccount = (id) => request(`/organizations/bank-accounts/${id}`, { method: "DELETE" });
