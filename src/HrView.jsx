@@ -45,19 +45,40 @@ function NewAssignmentForm({ staff, projectId, onCreate, onCancel }) {
   const [staffId, setStaffId] = useState(staff[0]?.id ?? "");
   const [allocPct, setAllocPct] = useState("100");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState("");
+  const [role, setRole] = useState("");
+  const [useCustomRate, setUseCustomRate] = useState(false);
+  const [monthlyRate, setMonthlyRate] = useState("");
 
   return (
     <div className="bg-white border border-[#E4E7EE] rounded-sm p-5 space-y-3 mb-6 max-w-lg">
       <select value={staffId} onChange={(e) => setStaffId(e.target.value)} className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm">
         {staff.map((s) => <option key={s.id} value={s.id}>{s.fullName} — {s.jobTitle}</option>)}
       </select>
+      <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Fonction sur ce projet (optionnel, si différente)" className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input value={allocPct} onChange={(e) => setAllocPct(e.target.value)} placeholder="Taux d'affectation (%)" className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
         <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
       </div>
+      <div>
+        <label className="text-xs text-[#7A8399] uppercase tracking-wide">Fin de mission (optionnel — pour un expert/consultant recruté pour une durée déterminée)</label>
+        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full mt-1 border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+      </div>
+      <label className="flex items-center gap-2 text-xs text-[#3D4761]">
+        <input type="checkbox" checked={useCustomRate} onChange={(e) => setUseCustomRate(e.target.checked)} />
+        Rémunération spécifique à ce projet (consultant payé différemment de son coût de base)
+      </label>
+      {useCustomRate && (
+        <input value={monthlyRate} onChange={(e) => setMonthlyRate(e.target.value)} placeholder="Taux mensuel pour ce projet" style={mono} className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+      )}
       <div className="flex gap-2">
         <button
-          onClick={() => staffId && onCreate({ staffId, projectId, allocPct: parseInt(allocPct, 10) || 100, startDate })}
+          onClick={() => staffId && onCreate({
+            staffId, projectId, allocPct: parseInt(allocPct, 10) || 100, startDate,
+            ...(endDate ? { endDate } : {}),
+            ...(role ? { role } : {}),
+            ...(useCustomRate && monthlyRate ? { monthlyRate: parseFloat(monthlyRate) } : {}),
+          })}
           className="text-xs px-3 py-1.5 bg-[#1B2A4A] text-white rounded-sm hover:bg-[#233459]"
         >
           Affecter au projet

@@ -21,7 +21,7 @@ function BrandPanel() {
       <div className="absolute -left-16 bottom-0 w-72 h-72 rounded-full bg-[#182642] opacity-50" />
 
       <div className="relative z-10">
-        <div className="text-[#E8B564] font-semibold tracking-wide text-sm uppercase" style={mono}>ONG Club des Amis du Monde (CAM)</div>
+        <div className="text-[#E8B564] font-semibold tracking-wide text-sm uppercase" style={mono}>Gestion Projet OS</div>
         <div className="text-xs text-[#8494B5] mt-1">Plateforme de gestion de projets</div>
       </div>
 
@@ -49,7 +49,7 @@ function BrandPanel() {
       </div>
 
       <div className="relative z-10 text-xs text-[#5C6987]">
-        © 2026 ONG Club des Amis du Monde (CAM) — Plateforme multi-organisations
+        © 2026 Gestion Projet OS — Plateforme multi-organisations
       </div>
     </div>
   );
@@ -292,7 +292,7 @@ export default function LoginScreen({ onLoggedIn }) {
             <div className="w-8 h-8 rounded-sm bg-[#101B33] flex items-center justify-center">
               <Lock size={14} className="text-[#E8B564]" />
             </div>
-            <div className="text-[#101B33] font-semibold tracking-wide text-sm uppercase" style={mono}>ONG Club des Amis du Monde (CAM)</div>
+            <div className="text-[#101B33] font-semibold tracking-wide text-sm uppercase" style={mono}>Gestion Projet OS</div>
           </div>
 
           <div className="mb-7">

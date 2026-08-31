@@ -3,7 +3,7 @@ import {
   LayoutDashboard, FolderKanban, Wallet, Truck, Users, FileText, Share2,
   Plus, ChevronRight, AlertTriangle, CheckCircle2, LogOut, Package,
   Download, FileSpreadsheet, Receipt, Banknote, Monitor, Car, UserPlus, CreditCard, BookOpen, Printer,
-  LineChart, Landmark, ClipboardList, FileSignature, Mail,
+  LineChart, Landmark, ClipboardList, FileSignature, Mail, Target,
 } from "lucide-react";
 import LoginScreen from "./LoginScreen.jsx";
 import { RecordPaymentPanel, CURRENCIES } from "./shared.jsx";
@@ -22,7 +22,11 @@ import ConsumableRequestsView from "./ConsumableRequestsView.jsx";
 import PaymentRequestsView from "./PaymentRequestsView.jsx";
 import LettersView from "./LettersView.jsx";
 import GanttChart from "./GanttChart.jsx";
+import { queueActivityUpdate, syncQueuedActivityUpdates, pendingActivityUpdatesCount } from "./lib/offlineQueue.js";
+import { WifiOff } from "lucide-react";
 import AuditLogView from "./AuditLogView.jsx";
+import LogframeMatrixView from "./LogframeMatrixView.jsx";
+import DonorTrackingView from "./DonorTrackingView.jsx";
 import TeamView from "./TeamView.jsx";
 import AcceptInviteScreen from "./AcceptInviteScreen.jsx";
 import MenuBar from "./MenuBar.jsx";
@@ -34,6 +38,7 @@ import {
   listPurchaseOrders, createPurchaseOrder, deliverPurchaseOrder,
   validatePurchaseOrder, rejectPurchaseOrder, registerSupplierInvoice,
   exportPurchaseOrderPdf, printPurchaseOrderPdf,
+  createActivityUpdate, listActivityUpdates,
   listActivities, createActivity, listDocuments, createDocument,
   exportDocumentPdf, exportDocumentDocx, exportBudgetXlsx, printDocumentPdf,
   listSuppliers, createSupplier, createProject, paySupplier,
@@ -56,6 +61,8 @@ const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 const NAV_ITEMS = [
   { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { id: "projects", label: "Projets", icon: FolderKanban },
+  { id: "logframe", label: "Suivi & Évaluation", icon: Target },
+  { id: "donors", label: "Suivi par bailleur", icon: Landmark },
   { id: "budget", label: "Budget & Dépenses", icon: Wallet },
   { id: "invoicing", label: "Facturation", icon: Receipt },
   { id: "payment-requests", label: "Demandes de paiement", icon: FileSignature },
@@ -95,8 +102,8 @@ function Sidebar({ active, onSelect, org, onLogout, collapsed, mobileOpen, onClo
       >
         <div className={`px-5 py-6 border-b border-[#22304F] ${collapsed ? "md:px-3" : ""}`}>
           <div className="text-[#E8B564] font-semibold tracking-wide text-sm uppercase" style={mono}>
-            <span className={collapsed ? "md:hidden" : ""}>ONG Club des Amis du Monde (CAM)</span>
-            <span className={collapsed ? "hidden md:inline" : "hidden"}>CAM</span>
+            <span className={collapsed ? "md:hidden" : ""}>Gestion Projet OS</span>
+            <span className={collapsed ? "hidden md:inline" : "hidden"}>GPO</span>
           </div>
           <div className={`text-xs text-[#8494B5] mt-0.5 ${collapsed ? "md:hidden" : ""}`}>{org || "Plateforme de gestion de projets"}</div>
         </div>
@@ -891,6 +898,89 @@ function ProjectTeamSection({ projectId }) {
   );
 }
 
+function ActivityUpdateForm({ activityId, onSubmit, onCancel }) {
+  const [note, setNote] = useState("");
+  const [beneficiariesReached, setBeneficiariesReached] = useState("");
+  const [progressPct, setProgressPct] = useState("");
+
+  return (
+    <div className="mt-2 bg-[#FAFBFC] border border-[#E4E7EE] rounded-sm p-4 space-y-3">
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        rows={2}
+        placeholder="Observation terrain (ex. : tournée effectuée dans le district de Boffa...)"
+        className="w-full border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm bg-white"
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <input value={beneficiariesReached} onChange={(e) => setBeneficiariesReached(e.target.value)} placeholder="Bénéficiaires touchés (optionnel)" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+        <input value={progressPct} onChange={(e) => setProgressPct(e.target.value)} placeholder="Avancement % (optionnel)" style={mono} className="border border-[#D8DCE6] rounded-sm px-3 py-2 text-sm" />
+      </div>
+      <div className="flex gap-2">
+        <button
+          disabled={note.length < 3}
+          onClick={() => onSubmit({
+            note,
+            ...(beneficiariesReached ? { beneficiariesReached: parseInt(beneficiariesReached, 10) } : {}),
+            ...(progressPct ? { progressPct: parseInt(progressPct, 10) } : {}),
+          })}
+          className="text-xs px-3 py-1.5 bg-[#1B2A4A] text-white rounded-sm hover:bg-[#233459] disabled:opacity-40"
+        >
+          Envoyer la remontée
+        </button>
+        <button onClick={onCancel} className="text-xs px-3 py-1.5 text-[#7A8399]">Annuler</button>
+      </div>
+    </div>
+  );
+}
+
+function ActivityRow({ activity, project }) {
+  const [showForm, setShowForm] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const handleSubmit = async (payload) => {
+    try {
+      await createActivityUpdate(activity.id, payload);
+      setShowForm(false);
+      setToast("Remontée terrain enregistrée.");
+    } catch (e) {
+      // Pas de connexion (ou coupure en cours de saisie) : on ne perd pas
+      // l'observation du terrain, on la garde localement pour un envoi
+      // automatique dès que la connexion revient.
+      if (!navigator.onLine) {
+        queueActivityUpdate(activity.id, payload);
+        setShowForm(false);
+        setToast("Pas de connexion — remontée enregistrée localement, elle sera envoyée automatiquement dès le retour du réseau.");
+      } else {
+        setToast(`Erreur : ${e.message}`);
+      }
+    }
+  };
+
+  return (
+    <div className="px-5 py-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm text-[#101B33]">{activity.title}</div>
+          <div className="text-xs text-[#9AA3B5] mt-0.5">
+            {activity.owner?.fullName ?? "Non assignée"}
+            {activity.budgetLine && ` · ${activity.budgetLine.code} — ${activity.budgetLine.label}`}
+            {activity.estimatedCost != null && ` · ${fmt(activity.estimatedCost, project.currency)}`}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#9AA3B5]">{activity.status}</span>
+          <button onClick={() => setShowForm((s) => !s)} className="text-xs px-2.5 py-1.5 border border-[#D8DCE6] rounded-sm text-[#3D4761] hover:bg-[#FAFBFC]">
+            Remontée terrain
+          </button>
+        </div>
+      </div>
+      {toast && <div className="text-xs text-[#2F5233] mt-2">{toast}</div>}
+      {showForm && <ActivityUpdateForm activityId={activity.id} onSubmit={handleSubmit} onCancel={() => setShowForm(false)} />}
+    </div>
+  );
+}
+
 function ProjectsView({ project, projects, onSelectProject, onProjectCreated }) {
   const [data, setData] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -986,17 +1076,7 @@ function ProjectsView({ project, projects, onSelectProject, onProjectCreated }) 
                     <div className="p-5 text-sm text-[#7A8399]">Aucune activité pour l'instant.</div>
                   ) : (
                     data.activities.map((a) => (
-                      <div key={a.id} className="flex items-center justify-between px-5 py-3">
-                        <div>
-                          <div className="text-sm text-[#101B33]">{a.title}</div>
-                          <div className="text-xs text-[#9AA3B5] mt-0.5">
-                            {a.owner?.fullName ?? "Non assignée"}
-                            {a.budgetLine && ` · ${a.budgetLine.code} — ${a.budgetLine.label}`}
-                            {a.estimatedCost != null && ` · ${fmt(a.estimatedCost, project.currency)}`}
-                          </div>
-                        </div>
-                        <span className="text-xs text-[#9AA3B5]">{a.status}</span>
-                      </div>
+                      <ActivityRow key={a.id} activity={a} project={project} />
                     ))
                   )}
                 </div>
@@ -1108,6 +1188,25 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [pendingOfflineCount, setPendingOfflineCount] = useState(0);
+
+  const runOfflineSync = useCallback(async () => {
+    const { remaining } = await syncQueuedActivityUpdates(createActivityUpdate);
+    setPendingOfflineCount(remaining);
+  }, []);
+
+  useEffect(() => {
+    setPendingOfflineCount(pendingActivityUpdatesCount());
+    window.addEventListener("online", runOfflineSync);
+    // Au cas où la page reste ouverte sans jamais recevoir l'événement
+    // "online" (certains navigateurs mobiles) : nouvelle tentative
+    // périodique, peu coûteuse tant que la file est vide.
+    const interval = setInterval(runOfflineSync, 60_000);
+    return () => {
+      window.removeEventListener("online", runOfflineSync);
+      clearInterval(interval);
+    };
+  }, [runOfflineSync]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [modal, setModal] = useState(null); // "shortcuts" | "about" | null
 
@@ -1194,6 +1293,8 @@ export default function App() {
   const view = (() => {
     switch (active) {
       case "dashboard": return <DashboardView project={project} lines={lines} loading={loading} />;
+      case "logframe": return <LogframeMatrixView project={project} />;
+      case "donors": return <DonorTrackingView project={project} />;
       case "projects": return (
         <ProjectsView
           project={project}
@@ -1244,6 +1345,7 @@ export default function App() {
         onShowShortcuts={() => setModal("shortcuts")}
         onShowAbout={() => setModal("about")}
         orgName={session.organization}
+        pendingOfflineCount={pendingOfflineCount}
       />
       <div className="flex flex-1 min-h-0">
         <Sidebar

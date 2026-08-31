@@ -39,7 +39,7 @@ export function ShortcutsModal({ onClose }) {
 
 export function AboutModal({ onClose, orgName }) {
   return (
-    <ModalShell title="À propos de ONG Club des Amis du Monde (CAM)" onClose={onClose}>
+    <ModalShell title="À propos de Gestion Projet OS" onClose={onClose}>
       <div className="space-y-2 text-sm text-[#3D4761]">
         <p>Plateforme multi-organisations de gestion de projets pour ONG et acteurs du développement.</p>
         <p className="text-xs text-[#9AA3B5]">Version prototype · Organisation active : {orgName || "—"}</p>

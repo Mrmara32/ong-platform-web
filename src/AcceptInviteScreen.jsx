@@ -53,7 +53,7 @@ export default function AcceptInviteScreen({ token, onAccepted }) {
           <div className="w-8 h-8 rounded-sm bg-[#101B33] flex items-center justify-center">
             <Lock size={14} className="text-[#E8B564]" />
           </div>
-          <div className="text-[#101B33] font-semibold tracking-wide text-sm uppercase" style={mono}>ONG Club des Amis du Monde (CAM)</div>
+          <div className="text-[#101B33] font-semibold tracking-wide text-sm uppercase" style={mono}>Gestion Projet OS</div>
         </div>
 
         <div className="bg-white border border-[#E4E7EE] rounded-md p-6">

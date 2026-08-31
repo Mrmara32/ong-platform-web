@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ChevronDown, Menu, X, Search } from "lucide-react";
+import { ChevronDown, Menu, X, Search, WifiOff } from "lucide-react";
 
 const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
@@ -108,7 +108,7 @@ function MobileMenuPanel({ menus, onClose }) {
   );
 }
 
-export default function MenuBar({ onNavigate, onLogout, onOpenPalette, onToggleSidebar, onToggleMobileSidebar, onToggleFullscreen, onShowShortcuts, onShowAbout, orgName }) {
+export default function MenuBar({ onNavigate, onLogout, onOpenPalette, onToggleSidebar, onToggleMobileSidebar, onToggleFullscreen, onShowShortcuts, onShowAbout, orgName, pendingOfflineCount }) {
   const [openMenu, setOpenMenu] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -167,7 +167,7 @@ export default function MenuBar({ onNavigate, onLogout, onOpenPalette, onToggleS
     ],
     "Aide": [
       { label: "Raccourcis clavier", action: onShowShortcuts },
-      { label: "À propos de ONG Club des Amis du Monde (CAM)", action: onShowAbout },
+      { label: "À propos de Gestion Projet OS", action: onShowAbout },
       { divider: true },
       { label: "Contacter le support", action: () => window.open("mailto:support@amisdumonde-cam.org") },
     ],
@@ -200,6 +200,11 @@ export default function MenuBar({ onNavigate, onLogout, onOpenPalette, onToggleS
         <button onClick={onOpenPalette} className="sm:hidden p-1.5 text-[#9AA3B5]" aria-label="Rechercher">
           <Search size={18} />
         </button>
+        {pendingOfflineCount > 0 && (
+          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-sm bg-[#FFF6E5] text-[#8A6116]" title="Remontées terrain en attente de connexion">
+            <WifiOff size={12} /> {pendingOfflineCount}
+          </span>
+        )}
         {orgName && <span className="hidden lg:inline text-xs text-[#9AA3B5]">{orgName}</span>}
       </div>
 
