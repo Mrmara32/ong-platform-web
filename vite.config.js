@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
-        name: "ONG Club des Amis du Monde (CAM) — Plateforme de gestion de projets",
-        short_name: "CAM",
+        name: "Gestion Projet OS — Plateforme de gestion de projets",
+        short_name: "GPO",
         description: "Gestion de projets, finances, logistique et RH pour ONG et acteurs du développement.",
         lang: "fr",
         start_url: "/",
